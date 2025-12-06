@@ -34,15 +34,16 @@ export default function ContactDetailPage() {
   }
 
   const daysSinceContact = getDaysSinceLastContact(contact.lastContact)
-  const needsContact = daysSinceContact > contact.contactFrequency
+  const needsContact = contact.contactFrequency ? daysSinceContact > contact.contactFrequency : false
 
   const getLevelConfig = (level: string) => {
     const config = {
+      S: { bg: "bg-purple-500", label: "S级客户" },
       A: { bg: "bg-primary", label: "A级客户" },
       B: { bg: "bg-emerald-500", label: "B级客户" },
       C: { bg: "bg-slate-400", label: "C级客户" },
     }
-    return config[level as keyof typeof config]
+    return config[level as keyof typeof config] || { bg: "bg-gray-400", label: `${level}级客户` }
   }
 
   const levelConfig = getLevelConfig(contact.level)
@@ -115,19 +116,13 @@ export default function ContactDetailPage() {
                 <span className={cn("px-2 py-0.5 text-xs font-medium rounded text-white", levelConfig.bg)}>
                   {levelConfig.label}
                 </span>
-                {needsContact && (
+                {needsContact && contact.contactFrequency && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-urgent/10 text-urgent rounded flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {daysSinceContact - contact.contactFrequency}天未联系
                   </span>
                 )}
               </div>
-              {contact.company && (
-                <p className="text-muted-foreground text-sm mt-1">
-                  {contact.company}
-                  {contact.position && ` · ${contact.position}`}
-                </p>
-              )}
             </div>
           </div>
 

@@ -74,7 +74,6 @@ export default function RecordCommunicationPage() {
             </div>
             <div>
               <p className="font-medium">{contact.name}</p>
-              {contact.company && <p className="text-sm text-muted-foreground">{contact.company}</p>}
             </div>
           </div>
         )}
