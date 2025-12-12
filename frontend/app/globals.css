@@ -1,157 +1,275 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* 重新设计配色 - 专业、高效、不花哨 */
-  --background: hsl(210 20% 98%);
-  --foreground: hsl(222 47% 11%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222 47% 11%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222 47% 11%);
-  /* 主色：沉稳蓝 - 代表专业、信任 */
-  --primary: hsl(217 91% 50%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(210 40% 96%);
-  --secondary-foreground: hsl(222 47% 20%);
-  --muted: hsl(210 20% 96%);
-  --muted-foreground: hsl(215 16% 47%);
-  --accent: hsl(210 40% 96%);
-  --accent-foreground: hsl(222 47% 11%);
-  /* 警告色：用于逾期、紧急 */
-  --destructive: hsl(0 72% 51%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(214 32% 91%);
-  --input: hsl(214 32% 91%);
-  --ring: hsl(217 91% 50%);
+  /* =========================================
+     Day Mode: 儒商雅致 (Classic Elegant)
+     ========================================= */
+  
+  --background: #F5F7FA; 
+  --foreground: #1F1A17;
 
-  /* 新增功能色 */
-  --success: hsl(142 71% 45%);
-  --success-foreground: hsl(0 0% 100%);
-  --warning: hsl(38 92% 50%);
-  --warning-foreground: hsl(0 0% 100%);
-  --urgent: hsl(0 72% 51%);
-  --urgent-foreground: hsl(0 0% 100%);
+  --card: #FFFFFF;
+  --card-foreground: #1F1A17;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #1F1A17;
+
+  --primary: #004D40; 
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #D4AF37; 
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #F9F1D8; 
+  --muted-foreground: #6B7A72;
+
+  --accent: #00695C; 
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #C62828;
+  --destructive-foreground: #FFFFFF;
+
+  --border: rgba(0, 77, 64, 0.08);
+  --input: rgba(0, 77, 64, 0.08);
+  --ring: #004D40;
 
   --radius: 0.75rem;
+
+  /* Day Shadows */
+  --shadow-soft: 0 4px 12px -2px rgba(60, 40, 30, 0.05), 0 2px 6px -1px rgba(60, 40, 30, 0.02);
+  --shadow-elevated: 0 10px 20px -5px rgba(60, 40, 30, 0.08), 0 4px 8px -2px rgba(60, 40, 30, 0.04);
+  --shadow-float: 0 20px 30px -10px rgba(60, 40, 30, 0.12);
+  --shadow-gold: 0 4px 14px 0 rgba(212, 175, 55, 0.3);
 }
 
 .dark {
-  --background: hsl(222 47% 8%);
-  --foreground: hsl(210 20% 98%);
-  --card: hsl(222 47% 11%);
-  --card-foreground: hsl(210 20% 98%);
-  --popover: hsl(222 47% 11%);
-  --popover-foreground: hsl(210 20% 98%);
-  --primary: hsl(217 91% 60%);
-  --primary-foreground: hsl(222 47% 11%);
-  --secondary: hsl(222 47% 15%);
-  --secondary-foreground: hsl(210 20% 98%);
-  --muted: hsl(222 47% 15%);
-  --muted-foreground: hsl(215 16% 57%);
-  --accent: hsl(222 47% 18%);
-  --accent-foreground: hsl(210 20% 98%);
-  --destructive: hsl(0 62% 50%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(222 47% 18%);
-  --input: hsl(222 47% 18%);
-  --ring: hsl(217 91% 60%);
+  /* =========================================
+     Night Mode: 现代雅致 (Modern Elegant)
+     ========================================= */
+  
+  --background: #0F172A; 
+  --foreground: #F1F5F9;
 
-  --success: hsl(142 61% 40%);
-  --success-foreground: hsl(0 0% 100%);
-  --warning: hsl(38 82% 45%);
-  --warning-foreground: hsl(0 0% 100%);
-  --urgent: hsl(0 62% 50%);
-  --urgent-foreground: hsl(0 0% 100%);
+  --card: #1E293B; 
+  --card-foreground: #F1F5F9;
+
+  --popover: #1E293B;
+  --popover-foreground: #F1F5F9;
+
+  --primary: #2DD4BF; 
+  --primary-foreground: #0F172A;
+
+  --secondary: #FBBF24; 
+  --secondary-foreground: #0F172A;
+
+  --muted: #334155; 
+  --muted-foreground: #94A3B8;
+
+  --accent: #1E293B;
+  --accent-foreground: #2DD4BF;
+
+  --destructive: #F87171;
+  --destructive-foreground: #FFFFFF;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #2DD4BF;
+
+  /* Night Shadows */
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  --shadow-gold: 0 0 20px rgba(251, 191, 36, 0.2);
 }
 
 @theme inline {
-  /* 使用系统字体，保证中文显示效果 */
-  --font-sans: 'Abel', 'Abel Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-urgent: var(--urgent);
-  --color-urgent-foreground: var(--urgent-foreground);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --font-serif: 'Roboto Slab', 'Roboto Slab Fallback';}
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+  /* 显式暴露自定义颜色 */
+  --color-ink: #004D40;
+  --color-ink-light: #00695C;
+  --color-gold: #D4AF37;
+  --color-gold-light: #F9F1D8;
+  --color-rice: #F5F7FA;
+  --color-night: #0F172A;
+  --color-danger: #C62828;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0 }
+    to { height: var(--radix-accordion-content-height) }
   }
-  body {
-    @apply bg-background text-foreground;
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height) }
+    to { height: 0 }
   }
 }
 
-/* 移动端滚动优化 */
-.hide-scrollbar {
+/* 基础样式 - 性能优化 */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Noto Sans SC", "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* 开启硬件加速 */
+  -webkit-transform: translate3d(0, 0, 0);
+  /* 优化点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+  /* 纹理 */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+.dark body {
+    background-image: none;
+}
+
+/* 全局开启 iOS 惯性滚动 */
+* {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 标题字体 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Noto Serif SC", "Playfair Display", serif;
+  font-weight: 700;
+}
+
+/* 实用工具类 */
+@utility hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* 安全区域适配 */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-/* 新增动画 */
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-.animate-slide-up {
-  animation: slide-up 0.2s ease-out;
+/* 玻璃拟态优化：移动端减弱模糊 */
+@utility glass {
+  background: rgba(255, 255, 255, 0.95);
+  /* 仅在支持的设备上开启高性能模糊 */
+  @supports (backdrop-filter: blur(10px)) {
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.85);
+  }
 }
 
-/* 触摸反馈 */
-/* 使用原生CSS替代不兼容的@apply active:变体 */
-.touch-active {
-  transition: all 0.15s ease;
+@utility glass-dark {
+  background: rgba(15, 23, 42, 0.95);
+  @supports (backdrop-filter: blur(12px)) {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.75);
+  }
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.touch-active:active {
-  transform: scale(0.98);
-  opacity: 0.8;
+/* 按钮样式覆盖 */
+.btn-primary {
+  @apply rounded-xl px-6 py-3 font-bold transition-all duration-300;
+  box-shadow: var(--shadow-float);
+  background: linear-gradient(135deg, #004D40 0%, #00695C 100%);
+  color: #FFFFFF;
+  /* 优化触摸区域和反馈 */
+  touch-action: manipulation;
+}
+
+.dark .btn-primary {
+  background: linear-gradient(135deg, #2DD4BF 0%, #0D9488 100%);
+  color: #0F172A;
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.2);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+/* 优化点击态：使用 transform 模拟物理按压，更跟手 */
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+/* 次级按钮 */
+.btn-secondary {
+  @apply rounded-xl px-6 py-3 font-bold transition-all duration-300;
+  background: #D4AF37;
+  color: #FFFFFF;
+  box-shadow: var(--shadow-gold);
+  touch-action: manipulation;
+}
+
+.dark .btn-secondary {
+    background: #FBBF24;
+    color: #0F172A;
+}
+
+.btn-secondary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.btn-secondary:active {
+    transform: scale(0.97);
+}
+
+/* 卡片样式 */
+.card-soft {
+  @apply bg-card border border-border rounded-[20px] p-6 transition-all duration-300 relative overflow-hidden;
+  box-shadow: var(--shadow-soft);
+  /* 开启 3D 变换以优化动画 */
+  transform: translateZ(0);
+}
+
+.card-soft:hover {
+  @apply border-primary/30;
+  box-shadow: var(--shadow-elevated);
+}
+
+/* 焦点卡片 */
+.card-focus {
+  @apply bg-white rounded-2xl p-5 border-t-4 border-secondary relative overflow-hidden;
+  box-shadow: var(--shadow-float);
+  transform: translateZ(0);
+}
+
+.dark .card-focus {
+  @apply bg-card;
+  box-shadow: var(--shadow-float);
+  border-top: 4px solid var(--secondary);
 }

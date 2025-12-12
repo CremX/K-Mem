@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Phone, MessageCircle, Mail, Calendar, Star, Edit, Plus, Clock, AlertCircle } from "lucide-react"
+import { Phone, MessageCircle, Mail, Calendar, Star, Edit, Plus, Clock, AlertCircle, Briefcase, MapPin, Users, Heart, AlertTriangle } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { PageHeader } from "@/components/page-header"
 import { QuickGlanceCard } from "@/components/quick-glance-card"
 import { TaskCard } from "@/components/task-card"
 import { QuickRecordModal } from "@/components/quick-record-modal"
-import { mockContacts, mockRecords, mockTasks, getDaysSinceLastContact } from "@/lib/mock-data"
+import { mockContacts, mockRecords, mockTasks } from "@/lib/mock-data"
+import { LEVEL_CONFIG, TASK_TYPES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
 export default function ContactDetailPage() {
@@ -18,7 +19,7 @@ export default function ContactDetailPage() {
 
   const contact = mockContacts.find((c) => c.id === contactId)
   const records = mockRecords.filter((r) => r.contactId === contactId)
-  const pendingTasks = mockTasks.filter((t) => t.contactId === contactId && !t.isCompleted)
+  const pendingTasks = mockTasks.filter((t) => t.contactId === contactId && t.status === "pending")
   const lastRecord = records[0]
 
   const [isFavorite, setIsFavorite] = useState(contact?.isFavorite || false)
@@ -28,36 +29,30 @@ export default function ContactDetailPage() {
   if (!contact) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">客户不存在</p>
+        <p className="text-muted-foreground">联系人不存在</p>
       </div>
     )
   }
 
-  const daysSinceContact = getDaysSinceLastContact(contact.lastContact)
-  const needsContact = contact.contactFrequency ? daysSinceContact > contact.contactFrequency : false
+  // 计算是否逾期未联系
+  const lastDateStr = contact.lastContactDate || contact.createdAt
+  const lastDate = new Date(lastDateStr)
+  const today = new Date()
+  const daysSinceContact = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+  const frequency = contact.interactionFrequency || 30
+  const isOverdue = daysSinceContact > frequency
 
-  const getLevelConfig = (level: string) => {
-    const config = {
-      S: { bg: "bg-purple-500", label: "S级客户" },
-      A: { bg: "bg-primary", label: "A级客户" },
-      B: { bg: "bg-emerald-500", label: "B级客户" },
-      C: { bg: "bg-slate-400", label: "C级客户" },
-    }
-    return config[level as keyof typeof config] || { bg: "bg-gray-400", label: `${level}级客户` }
-  }
-
-  const levelConfig = getLevelConfig(contact.level)
+  const levelConfig = LEVEL_CONFIG[contact.level as keyof typeof LEVEL_CONFIG] || LEVEL_CONFIG.C
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
     })
   }
 
   const handleToggleTask = (id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)))
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.status } : t)))
   }
 
   const handleQuickRecord = (data: any) => {
@@ -65,18 +60,10 @@ export default function ContactDetailPage() {
     // 这里会保存记录到后端
   }
 
-  const recordTypeLabels: Record<string, string> = {
-    call: "电话",
-    meeting: "见面",
-    wechat: "微信",
-    visit: "拜访",
-    other: "其他",
-  }
-
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader
-        title="客户详情"
+        title="联系人详情"
         showBack
         rightContent={
           <button
@@ -89,13 +76,13 @@ export default function ContactDetailPage() {
       />
 
       <main className="px-4 py-4 space-y-4">
-        {/* 基本信息卡片 */}
-        <div className="bg-card rounded-xl border border-border p-4">
+        {/* 1. 核心身份卡片 (Identity Card) */}
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
           <div className="flex items-start gap-4">
             <div
               className={cn(
-                "w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-medium shrink-0",
-                levelConfig.bg,
+                "w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-medium shrink-0 shadow-inner",
+                levelConfig.bgColor,
               )}
             >
               {contact.name.slice(0, 1)}
@@ -107,33 +94,49 @@ export default function ContactDetailPage() {
                   <Star
                     className={cn(
                       "w-5 h-5 transition-colors",
-                      isFavorite ? "text-warning fill-warning" : "text-muted-foreground",
+                      isFavorite ? "text-amber-400 fill-amber-400" : "text-muted-foreground",
                     )}
                   />
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={cn("px-2 py-0.5 text-xs font-medium rounded text-white", levelConfig.bg)}>
+              
+              {/* 职位与公司 */}
+              <div className="mt-1 space-y-0.5">
+                <p className="text-base font-medium text-foreground/90 flex items-center gap-1.5">
+                   <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
+                   {contact.title || "未填职位"}
+                </p>
+                <p className="text-sm text-muted-foreground pl-5">{contact.company || "未填公司"}</p>
+              </div>
+
+              {/* 状态徽章 */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className={cn("px-2 py-0.5 text-xs font-bold rounded-full text-white shadow-sm", levelConfig.bgColor)}>
                   {levelConfig.label}
                 </span>
-                {needsContact && contact.contactFrequency && (
-                  <span className="px-2 py-0.5 text-xs font-medium bg-urgent/10 text-urgent rounded flex items-center gap-1">
+                {isOverdue && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-red-50 text-red-600 border border-red-100 rounded-full flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
-                    {daysSinceContact - contact.contactFrequency}天未联系
+                    {daysSinceContact}天未联系
                   </span>
+                )}
+                {contact.dealStatus && (
+                   <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 rounded-full">
+                     阶段: {contact.dealStatus}
+                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* 快捷操作 */}
-          <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+          {/* 快捷操作栏 */}
+          <div className="flex gap-2 mt-4 pt-4 border-t border-border/50">
             <a
               href={`tel:${contact.phone}`}
-              className="flex-1 flex flex-col items-center gap-1 py-3 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors"
+              className="flex-1 flex flex-col items-center gap-1 py-2.5 bg-primary/5 text-primary rounded-lg active:bg-primary/10 transition-colors"
             >
               <Phone className="w-5 h-5" />
-              <span className="text-xs">电话</span>
+              <span className="text-xs font-medium">电话</span>
             </a>
             {contact.wechat && (
               <button
@@ -141,38 +144,81 @@ export default function ContactDetailPage() {
                   navigator.clipboard.writeText(contact.wechat!)
                   alert(`微信号已复制: ${contact.wechat}`)
                 }}
-                className="flex-1 flex flex-col items-center gap-1 py-3 bg-success/10 text-success rounded-xl hover:bg-success/20 transition-colors"
+                className="flex-1 flex flex-col items-center gap-1 py-2.5 bg-green-50 text-green-600 rounded-lg active:bg-green-100 transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
-                <span className="text-xs">微信</span>
+                <span className="text-xs font-medium">微信</span>
               </button>
             )}
             <button
               onClick={() => setShowRecordModal(true)}
-              className="flex-1 flex flex-col items-center gap-1 py-3 bg-warning/10 text-warning rounded-xl hover:bg-warning/20 transition-colors"
+              className="flex-1 flex flex-col items-center gap-1 py-2.5 bg-amber-50 text-amber-600 rounded-lg active:bg-amber-100 transition-colors"
             >
               <Plus className="w-5 h-5" />
-              <span className="text-xs">记录</span>
+              <span className="text-xs font-medium">记一笔</span>
             </button>
           </div>
         </div>
 
-        {/* 速览卡片 */}
-        <QuickGlanceCard contact={contact} lastRecord={lastRecord} pendingTasks={pendingTasks} />
+        {/* 2. 作弊小抄 (The Cheat Sheet) - 核心改动点 */}
+        <div className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">破冰 & 禁忌</span>
+                <div className="h-px bg-border flex-1" />
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+                {/* 抓手 (Hooks) */}
+                <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3">
+                    <div className="flex items-start gap-3">
+                        <Heart className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                        <div>
+                            <p className="text-xs font-bold text-blue-700 mb-1">关键喜好 (The Hook)</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {contact.hobbies?.map(hobby => (
+                                    <span key={hobby} className="px-1.5 py-0.5 bg-white text-blue-700 text-xs rounded border border-blue-200">
+                                        {hobby}
+                                    </span>
+                                ))}
+                                {!contact.hobbies && <span className="text-xs text-blue-400 italic">暂无爱好记录</span>}
+                            </div>
+                            {contact.familyInfo && (
+                                <p className="text-xs text-blue-600 mt-2 leading-relaxed">
+                                    👨‍👩‍👧 {contact.familyInfo}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
-        {/* 待办事项 */}
+                {/* 禁忌 (Taboos) */}
+                {contact.taboos && (
+                    <div className="bg-red-50/50 border border-red-100 rounded-xl p-3">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-xs font-bold text-red-700 mb-1">雷区禁忌</p>
+                                <p className="text-xs text-red-600 leading-relaxed">{contact.taboos}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* 3. 待办事项 (Action Items) */}
         {pendingTasks.length > 0 && (
           <div className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Clock className="w-4 h-4 text-warning" />
+              <h3 className="font-semibold flex items-center gap-2 text-sm">
+                <Clock className="w-4 h-4 text-amber-500" />
                 待办事项
               </h3>
               <button
                 onClick={() => router.push(`/tasks/new?contactId=${contactId}`)}
-                className="text-primary text-sm flex items-center gap-1"
+                className="text-primary text-xs font-medium flex items-center gap-1"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
                 添加
               </button>
             </div>
@@ -190,93 +236,70 @@ export default function ContactDetailPage() {
           </div>
         )}
 
-        {/* 联系方式 */}
-        <div className="bg-card rounded-xl border border-border divide-y divide-border">
-          <div className="flex items-center gap-3 p-4">
-            <Phone className="w-5 h-5 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">电话</p>
-              <p className="font-medium">{contact.phone}</p>
-            </div>
-          </div>
-          {contact.wechat && (
-            <div className="flex items-center gap-3 p-4">
-              <MessageCircle className="w-5 h-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">微信</p>
-                <p className="font-medium">{contact.wechat}</p>
-              </div>
-            </div>
-          )}
-          {contact.email && (
-            <div className="flex items-center gap-3 p-4">
-              <Mail className="w-5 h-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">邮箱</p>
-                <p className="font-medium">{contact.email}</p>
-              </div>
-            </div>
-          )}
-          {contact.birthday && (
-            <div className="flex items-center gap-3 p-4">
-              <Calendar className="w-5 h-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">生日</p>
-                <p className="font-medium">{formatDate(contact.birthday)}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 沟通记录 */}
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">沟通记录</h3>
-            <button onClick={() => setShowRecordModal(true)} className="text-primary text-sm flex items-center gap-1">
-              <Plus className="w-4 h-4" />
+        {/* 4. 交互记录 (Interaction Stream) */}
+        <div className="bg-card rounded-xl border border-border p-4 min-h-[200px]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-primary" />
+                交往记录
+            </h3>
+            <button onClick={() => setShowRecordModal(true)} className="text-primary text-xs font-medium flex items-center gap-1">
+              <Plus className="w-3.5 h-3.5" />
               添加
             </button>
           </div>
 
           {records.length > 0 ? (
-            <div className="space-y-3">
-              {records.slice(0, 3).map((record) => (
-                <div key={record.id} className="p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded">
-                      {recordTypeLabels[record.type]}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{formatDate(record.date)}</span>
-                  </div>
-                  {record.summary && <p className="text-sm font-medium">{record.summary}</p>}
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{record.content}</p>
-                  {record.promises && record.promises.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {record.promises.map((promise, i) => (
-                        <span key={i} className="text-xs bg-warning/10 text-warning px-2 py-0.5 rounded">
-                          承诺: {promise}
-                        </span>
-                      ))}
+            <div className="relative pl-4 space-y-6 before:absolute before:left-[5px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+              {records.slice(0, 5).map((record) => {
+                  const typeConfig = TASK_TYPES[record.type as keyof typeof TASK_TYPES] || { label: "记录", color: "text-gray-500" };
+                  
+                  return (
+                    <div key={record.id} className="relative">
+                        {/* 时间轴点 */}
+                        <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-background border-2 border-primary ring-2 ring-background z-10" />
+                        
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground font-medium">{formatDate(record.date)}</span>
+                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded bg-muted font-medium", typeConfig.color)}>
+                                {typeConfig.label}
+                            </span>
+                        </div>
+                        
+                        <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
+                            {record.participants && (
+                                <p className="text-xs text-muted-foreground mb-1">
+                                    👥 与 {record.participants} @ {record.location || "未知地点"}
+                                </p>
+                            )}
+                            <p className="text-sm text-foreground/90 leading-relaxed">{record.content}</p>
+                            
+                            {record.outcome && (
+                                <div className="mt-2 pt-2 border-t border-border/50">
+                                    <p className="text-xs font-medium text-primary">👉 结论：{record.outcome}</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                  )}
-                </div>
-              ))}
-              {records.length > 3 && (
-                <button className="w-full text-center text-sm text-primary py-2">
-                  查看全部 {records.length} 条记录
-                </button>
-              )}
+                  )
+              })}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-4">暂无沟通记录</p>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mb-3">
+                    <MessageCircle className="w-6 h-6 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">暂无交往记录</p>
+                <p className="text-xs text-muted-foreground/50 mt-1">记录一次饭局或电话，开始积累信任</p>
+            </div>
           )}
         </div>
 
-        {/* 备注 */}
+        {/* 底部补充信息 */}
         {contact.notes && (
           <div className="bg-card rounded-xl border border-border p-4">
-            <h3 className="font-semibold mb-2">备注</h3>
-            <p className="text-muted-foreground text-sm">{contact.notes}</p>
+            <h3 className="font-semibold mb-2 text-sm">备注</h3>
+            <p className="text-muted-foreground text-sm leading-relaxed">{contact.notes}</p>
           </div>
         )}
       </main>

@@ -36,7 +36,7 @@ export default function TasksPage() {
         }
       }
 
-      if (task.isCompleted) {
+      if (task.status === "completed") {
         completed.push(task)
         return
       }
@@ -75,8 +75,8 @@ export default function TasksPage() {
         t.id === id
           ? {
               ...t,
-              isCompleted: !t.isCompleted,
-              completedAt: !t.isCompleted ? new Date().toISOString() : undefined,
+              status: t.status === "completed" ? "pending" : "completed",
+              completedAt: t.status !== "completed" ? new Date().toISOString() : undefined,
             }
           : t,
       ),
@@ -89,8 +89,8 @@ export default function TasksPage() {
       label: "逾期",
       count: categorizedTasks.overdue.length,
       icon: AlertTriangle,
-      color: "text-urgent",
-      bgColor: "bg-urgent",
+      color: "text-red-500",
+      bgColor: "bg-red-500",
     },
     {
       key: "today" as FilterTab,
@@ -113,8 +113,8 @@ export default function TasksPage() {
       label: "已完成",
       count: categorizedTasks.completed.length,
       icon: CheckCircle2,
-      color: "text-success",
-      bgColor: "bg-success",
+      color: "text-green-500",
+      bgColor: "bg-green-500",
     },
   ]
 
@@ -123,7 +123,7 @@ export default function TasksPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <PageHeader
-        title="待办"
+        title="待办事项"
         rightContent={
           <button
             onClick={() => router.push("/tasks/new")}
@@ -142,7 +142,7 @@ export default function TasksPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索待办或客户名..."
+            placeholder="搜索任务或关联人..."
             className="w-full pl-10 pr-4 py-3 bg-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
@@ -186,10 +186,10 @@ export default function TasksPage() {
         ) : (
           <div className="py-16 text-center">
             <p className="text-muted-foreground mb-4">
-              {activeTab === "overdue" && "没有逾期任务"}
-              {activeTab === "today" && "今天没有待办"}
-              {activeTab === "upcoming" && "暂无计划任务"}
-              {activeTab === "completed" && "还没有完成的任务"}
+              {activeTab === "overdue" && "太棒了，没有逾期任务！"}
+              {activeTab === "today" && "今天暂无待办，去喝杯茶吧"}
+              {activeTab === "upcoming" && "近期没有计划任务"}
+              {activeTab === "completed" && "还没有完成的任务，加油！"}
             </p>
             {activeTab !== "completed" && (
               <button

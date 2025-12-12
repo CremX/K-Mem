@@ -1,8 +1,11 @@
 "use client"
 
-import { Check, Phone, Calendar, Cake, MessageSquare, AlertCircle, Repeat, ChevronRight, Heart } from "lucide-react"
+import { Calendar, Check, Clock, ChevronRight, MoreHorizontal, User, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Task } from "@/lib/mock-data"
+import { TASK_TYPES } from "@/lib/constants"
+import { SealCheckbox } from "@/components/seal-checkbox"
+import { useState } from "react"
 
 interface TaskCardProps {
   task: Task
@@ -11,23 +14,11 @@ interface TaskCardProps {
   showContact?: boolean
 }
 
-const typeConfig = {
-  // 服务行业类型
-  appointment: { icon: Calendar, label: "预约" },
-  care: { icon: Heart, label: "关怀" },
-  promise: { icon: AlertCircle, label: "承诺" },
-  birthday: { icon: Cake, label: "生日" },
-  custom: { icon: Calendar, label: "待办" },
-  // 兼容旧类型
-  follow_up: { icon: MessageSquare, label: "跟进" },
-  meeting: { icon: Calendar, label: "会议" },
-  call: { icon: Phone, label: "电话" },
-} as const
-
 export function TaskCard({ task, onToggleComplete, onClick, showContact = true }: TaskCardProps) {
-  const config = typeConfig[task.type] || typeConfig.custom
-  const Icon = config.icon
-
+  const [isSwiped, setIsSwiped] = useState(false) // 模拟左滑状态
+  
+  const typeConfig = TASK_TYPES[task.type as keyof typeof TASK_TYPES] || { label: "待办", icon: "Check", color: "text-slate-400" }
+  
   const formatDate = (date: string) => {
     const d = new Date(date)
     const today = new Date()
@@ -52,73 +43,121 @@ export function TaskCard({ task, onToggleComplete, onClick, showContact = true }
   today.setHours(0, 0, 0, 0)
   const dueDate = new Date(task.dueDate)
   dueDate.setHours(0, 0, 0, 0)
-  const isOverdue = !task.isCompleted && dueDate < today
+  
+  const isOverdue = task.status !== 'completed' && dueDate < today
   const isToday = dueDate.getTime() === today.getTime()
+  const isCompleted = task.status === 'completed'
+  const isHighPriority = task.priority === "high"
 
-  // 根据状态决定左边框颜色
-  const getBorderColor = () => {
-    if (task.isCompleted) return "border-l-muted-foreground"
-    if (isOverdue) return "border-l-urgent"
-    if (task.priority === "high" || task.type === "promise") return "border-l-warning"
-    if (isToday) return "border-l-primary"
-    return "border-l-muted-foreground"
+  // 状态颜色逻辑
+  const getStatusStyle = () => {
+      if (isCompleted) return "bg-card/50 border-border"
+      if (isOverdue) return "bg-card border-l-4 border-l-destructive border-y-border border-r-border" // 逾期左侧红边
+      if (isHighPriority) return "bg-card border-l-4 border-l-secondary border-y-border border-r-border shadow-gold" // 高优左侧金边
+      return "bg-card border border-border" 
+  }
+
+  // 模拟手势处理
+  const handleTouchStart = (e: React.TouchEvent) => {
+      // 简单实现：点击右侧区域触发状态切换
+      // 实际项目建议使用 framer-motion 或 use-gesture
   }
 
   return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-3 p-3 bg-card rounded-lg border border-border border-l-[3px] transition-all touch-active",
-        getBorderColor(),
-        task.isCompleted && "opacity-50",
-      )}
-    >
-      {/* 完成按钮 */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onToggleComplete?.(task.id)
-        }}
-        className={cn(
-          "shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-          task.isCompleted
-            ? "bg-success border-success text-success-foreground"
-            : isOverdue
-              ? "border-urgent hover:bg-urgent/10"
-              : "border-muted-foreground/50 hover:border-primary",
-        )}
-      >
-        {task.isCompleted && <Check className="w-3 h-3" />}
-      </button>
-
-      {/* 内容 */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className={cn("font-medium text-sm", task.isCompleted && "line-through text-muted-foreground")}>
-            {task.title}
-          </span>
-          {task.type === "promise" && !task.isCompleted && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium bg-warning/10 text-warning rounded">承诺</span>
-          )}
-          {task.isRepeating && <Repeat className="w-3 h-3 text-muted-foreground" />}
+    <div className="relative group overflow-hidden rounded-[20px] transition-all">
+        {/* 背景操作层 (左滑露出) */}
+        <div className="absolute inset-0 flex flex-row-reverse bg-muted/20">
+            <div className="h-full w-16 bg-destructive text-white flex flex-col items-center justify-center text-[10px] font-bold cursor-pointer hover:bg-destructive/90 transition-colors">
+                <span>删除</span>
+            </div>
+            <div className="h-full w-16 bg-orange-400 text-white flex flex-col items-center justify-center text-[10px] font-bold cursor-pointer hover:bg-orange-500 transition-colors">
+                <span>推迟</span>
+            </div>
+            <div className="h-full w-16 bg-blue-500 text-white flex flex-col items-center justify-center text-[10px] font-bold cursor-pointer hover:bg-blue-600 transition-colors">
+                <span>委派</span>
+            </div>
         </div>
 
-        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-          <span className={cn("flex items-center gap-1", isOverdue && "text-urgent font-medium")}>
-            <Icon className="w-3 h-3" />
-            {formatDate(task.dueDate)}
-            {task.dueTime && !isOverdue && ` ${task.dueTime}`}
-          </span>
-          {showContact && task.contactName && (
-            <>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-              <span>{task.contactName}</span>
-            </>
-          )}
-        </div>
-      </div>
+        {/* 前景卡片层 */}
+        <div
+            onClick={onClick}
+            className={cn(
+                "relative flex items-center gap-4 p-4 transition-transform duration-300 ease-out cursor-pointer bg-card",
+                getStatusStyle(),
+                "shadow-soft hover:shadow-elevated active:scale-[0.99]",
+                isCompleted && "opacity-60 grayscale",
+                isSwiped ? "-translate-x-48" : "translate-x-0" // 模拟滑动位移
+            )}
+        >
+            {/* 复选框区域 */}
+            <div onClick={(e) => e.stopPropagation()} className="shrink-0 pl-1">
+                <SealCheckbox 
+                    checked={isCompleted} 
+                    onCheckedChange={(checked) => onToggleComplete?.(task.id)}
+                />
+            </div>
 
-      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            {/* 主要信息 */}
+            <div className="flex-1 min-w-0 ml-1">
+                <div className="flex items-center gap-2 mb-1.5">
+                    <span className={cn(
+                        "font-bold text-[15px] truncate transition-colors", 
+                        isCompleted 
+                        ? "text-muted-foreground line-through decoration-muted-foreground" 
+                        : "text-foreground group-hover:text-primary dark:group-hover:text-secondary"
+                    )}>
+                        {task.title}
+                    </span>
+                    
+                    {/* 标签 */}
+                    {!isCompleted && (
+                        <span className={cn(
+                            "px-2 py-0.5 text-[10px] font-medium rounded-full border shrink-0 flex items-center gap-1",
+                            "bg-muted/50 border-border text-muted-foreground"
+                        )}>
+                            {typeConfig.label}
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className={cn(
+                        "flex items-center gap-1 font-sans font-medium", 
+                        isOverdue 
+                            ? "text-destructive" 
+                            : (isToday ? "text-secondary" : "")
+                    )}>
+                        <Calendar className="w-3.5 h-3.5" />
+                        {formatDate(task.dueDate)}
+                        {task.dueTime && !isOverdue && !isCompleted && (
+                            <span className="flex items-center gap-0.5 ml-1 opacity-80 border-l border-border pl-2">
+                                <Clock className="w-3 h-3" /> {task.dueTime}
+                            </span>
+                        )}
+                    </span>
+                    
+                    {showContact && task.contactName && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/30 border border-border/50 max-w-[120px]">
+                            <User className="w-3 h-3 text-muted-foreground/70" />
+                            <span className="truncate text-foreground/80">
+                                {task.contactName}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* 操作触发器 (模拟 Swipe) */}
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation()
+                    setIsSwiped(!isSwiped)
+                }}
+                className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors active:scale-90"
+            >
+                <MoreHorizontal className="w-5 h-5" />
+            </button>
+        </div>
     </div>
   )
 }

@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Calendar, Clock, User, Flag, AlertCircle, Heart, Cake } from "lucide-react"
+import { Calendar, Clock, User, Flag, AlertCircle, Heart, Cake, FileText, Phone, Briefcase, DollarSign, Utensils, Gift } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import { mockContacts } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import type { Task } from "@/lib/mock-data"
+import { TASK_TYPES } from "@/lib/constants"
 
 export default function NewTaskPage() {
   const router = useRouter()
@@ -20,7 +21,7 @@ export default function NewTaskPage() {
   const [dueDate, setDueDate] = useState("")
   const [dueTime, setDueTime] = useState("")
   const [priority, setPriority] = useState<"high" | "medium" | "low">("medium")
-  const [taskType, setTaskType] = useState<Task["type"]>(preselectedType || "custom")
+  const [taskType, setTaskType] = useState<Task["type"]>(preselectedType || "todo")
 
   const selectedContact = mockContacts.find((c) => c.id === contactId)
 
@@ -44,6 +45,7 @@ export default function NewTaskPage() {
       dueTime,
       priority,
       type: taskType,
+      status: "pending"
     })
 
     router.back()
@@ -51,43 +53,39 @@ export default function NewTaskPage() {
 
   const canSave = title.trim().length > 0 && dueDate.length > 0
 
-  // 任务类型选项
-  const taskTypeOptions: { value: Task["type"]; label: string; icon: React.ElementType; desc: string }[] = [
-    { value: "appointment", label: "预约", icon: Calendar, desc: "客人预约服务" },
-    { value: "promise", label: "承诺", icon: AlertCircle, desc: "答应客人的事" },
-    { value: "care", label: "关怀", icon: Heart, desc: "主动关怀提醒" },
-    { value: "birthday", label: "生日", icon: Cake, desc: "客人生日提醒" },
-    { value: "custom", label: "其他", icon: Clock, desc: "自定义待办" },
-  ]
+  // 映射 icon 字符串到组件 (与 task-card.tsx 保持一致)
+  const iconMap: Record<string, any> = {
+      Utensils, Briefcase, Phone, FileText, DollarSign, Gift, Calendar, Heart, AlertCircle, Cake
+  }
 
   // 快捷日期选项
   const quickDates = [
     { label: "今天", value: new Date().toISOString().split("T")[0] },
     { label: "明天", value: new Date(Date.now() + 86400000).toISOString().split("T")[0] },
-    { label: "后天", value: new Date(Date.now() + 172800000).toISOString().split("T")[0] },
-    { label: "一周后", value: new Date(Date.now() + 604800000).toISOString().split("T")[0] },
+    { label: "下周一", value: (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + (1 + 7 - d.getDay()) % 7 || 7); // Calculate next Monday
+        return d.toISOString().split("T")[0];
+    })() },
   ]
 
   // 根据任务类型自动设置标题提示
   const getTitlePlaceholder = () => {
     switch (taskType) {
-      case "appointment":
-        return "如：今日预约：李姐 14:00"
-      case "promise":
-        return "如：给王总送按摩精油"
-      case "care":
-        return "如：关怀：询问李姐肩颈情况"
-      case "birthday":
-        return "如：张哥生日祝福"
-      default:
-        return "待办事项..."
+      case "social": return "如：请王总吃饭";
+      case "meeting": return "如：拜访张经理";
+      case "follow_up": return "如：电话回访李总";
+      case "proposal": return "如：准备A公司报价方案";
+      case "close": return "如：跟进B项目合同流程";
+      case "care": return "如：祝陈总生日快乐";
+      default: return "要做什么？";
     }
   }
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        title="新建待办"
+        title="新建计划"
         showBack
         rightContent={
           <button
@@ -106,28 +104,26 @@ export default function NewTaskPage() {
       />
 
       <main className="px-4 py-4 space-y-4 pb-20">
-        {/* 任务类型 */}
+        {/* 任务类型选择 (Business Type) */}
         <div className="bg-card rounded-xl border border-border p-4">
-          <p className="text-sm font-medium text-muted-foreground mb-3">任务类型</p>
-          <div className="grid grid-cols-3 gap-2">
-            {taskTypeOptions.map((option) => {
-              const Icon = option.icon
-              const isSelected = taskType === option.value
+          <p className="text-sm font-medium text-muted-foreground mb-3">行动类型</p>
+          <div className="grid grid-cols-4 gap-2">
+            {Object.entries(TASK_TYPES).map(([key, config]) => {
+              const Icon = iconMap[config.icon] || Calendar
+              const isSelected = taskType === key
               return (
                 <button
-                  key={option.value}
-                  onClick={() => setTaskType(option.value)}
+                  key={key}
+                  onClick={() => setTaskType(key as Task["type"])}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 p-3 rounded-lg transition-colors border-2",
+                    "flex flex-col items-center gap-1.5 p-2 rounded-lg transition-colors border",
                     isSelected
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-muted/30 hover:bg-muted/50",
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-transparent bg-muted/30 text-muted-foreground hover:bg-muted/50",
                   )}
                 >
                   <Icon className={cn("w-5 h-5", isSelected ? "text-primary" : "text-muted-foreground")} />
-                  <span className={cn("text-xs", isSelected ? "font-medium text-primary" : "text-muted-foreground")}>
-                    {option.label}
-                  </span>
+                  <span className="text-[10px] font-medium whitespace-nowrap">{config.label.split('/')[0]}</span>
                 </button>
               )
             })}
@@ -145,7 +141,7 @@ export default function NewTaskPage() {
             autoFocus
           />
           {!title.trim() && (
-            <p className="text-xs text-muted-foreground mt-1">请输入任务标题（必填）</p>
+            <p className="text-xs text-muted-foreground mt-1">请输入计划内容（必填）</p>
           )}
         </div>
 
@@ -154,34 +150,35 @@ export default function NewTaskPage() {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="添加描述（可选）"
+            placeholder="备注细节（如：带上之前的方案...）"
             rows={3}
             className="w-full px-3 py-3 bg-muted rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
 
-        {/* 关联客人 */}
+        {/* 关联资源 */}
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <User className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">关联客人</span>
+            <span className="text-sm font-medium">关联人脉</span>
           </div>
           <select
             value={contactId}
             onChange={(e) => setContactId(e.target.value)}
             className="w-full px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
-            <option value="">不关联客人</option>
+            <option value="">不关联</option>
             {mockContacts.map((contact) => (
               <option key={contact.id} value={contact.id}>
-                {contact.name} {contact.level && `(${contact.level}级)`}
+                {contact.name} {contact.company ? `- ${contact.company}` : ''} ({contact.level}级)
               </option>
             ))}
           </select>
           {selectedContact && (
-            <p className="text-xs text-muted-foreground mt-2">
-              已选择：{selectedContact.name} · {selectedContact.servicePreferences?.split("，")[0] || "暂无偏好"}
-            </p>
+            <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                <p>职位：{selectedContact.title || "未填"}</p>
+                <p>爱好：{selectedContact.hobbies?.join("、") || "暂无"}</p>
+            </div>
           )}
         </div>
 
@@ -189,7 +186,7 @@ export default function NewTaskPage() {
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <Calendar className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">截止日期</span>
+            <span className="text-sm font-medium">计划时间</span>
           </div>
 
           {/* 快捷选项 */}
@@ -199,8 +196,10 @@ export default function NewTaskPage() {
                 key={item.label}
                 onClick={() => setDueDate(item.value)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm transition-colors",
-                  dueDate === item.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                  "px-3 py-1.5 rounded-lg text-xs transition-colors border",
+                  dueDate === item.value 
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "bg-background text-muted-foreground border-border",
                 )}
               >
                 {item.label}
@@ -208,55 +207,40 @@ export default function NewTaskPage() {
             ))}
           </div>
 
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            min={new Date().toISOString().split("T")[0]}
-            className="w-full px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-          {!dueDate && (
-            <p className="text-xs text-muted-foreground mt-2">请选择截止日期（必填）</p>
-          )}
-        </div>
-
-        {/* 截止时间（可选） */}
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {taskType === "appointment" ? "服务时间" : "提醒时间"}（可选）
-            </span>
+          <div className="flex gap-4">
+             <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none"
+             />
+             <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="w-32 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none"
+             />
           </div>
-          <input
-            type="time"
-            value={dueTime}
-            onChange={(e) => setDueTime(e.target.value)}
-            className="w-full px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-          {taskType === "appointment" && (
-            <p className="text-xs text-muted-foreground mt-2">设置预约的具体服务时间</p>
-          )}
         </div>
 
         {/* 优先级 */}
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <Flag className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">优先级</span>
+            <span className="text-sm font-medium">重要程度</span>
           </div>
           <div className="flex gap-2">
             {[
-              { value: "high", label: "高", color: "bg-urgent text-urgent-foreground" },
-              { value: "medium", label: "中", color: "bg-warning text-warning-foreground" },
-              { value: "low", label: "低", color: "bg-muted text-muted-foreground" },
+              { value: "high", label: "高 (High)", color: "bg-red-100 text-red-700 border-red-200" },
+              { value: "medium", label: "中 (Medium)", color: "bg-amber-100 text-amber-700 border-amber-200" },
+              { value: "low", label: "低 (Low)", color: "bg-slate-100 text-slate-700 border-slate-200" },
             ].map((item) => (
               <button
                 key={item.value}
                 onClick={() => setPriority(item.value as typeof priority)}
                 className={cn(
-                  "flex-1 py-2 rounded-lg text-sm font-medium transition-colors",
-                  priority === item.value ? item.color : "bg-muted/50 text-muted-foreground",
+                  "flex-1 py-2 rounded-lg text-sm font-medium transition-colors border",
+                  priority === item.value ? item.color : "bg-muted/30 text-muted-foreground border-transparent",
                 )}
               >
                 {item.label}

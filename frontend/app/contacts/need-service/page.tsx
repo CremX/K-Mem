@@ -2,51 +2,49 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlertTriangle, Phone, MessageCircle, Heart, ChevronRight, User, Clock, Check } from "lucide-react"
+import { AlertTriangle, Phone, MessageCircle, Heart, ChevronRight, Clock, Check, RefreshCw } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { PageHeader } from "@/components/page-header"
-import { ContactCard } from "@/components/contact-card"
 import { mockContacts, getDaysSinceLastContact } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
-import { getLevelConfig } from "@/lib/level-config"
+import { LEVEL_CONFIG } from "@/lib/constants"
 
 type SortBy = "days" | "level" | "name"
 
-export default function NeedServicePage() {
+export default function NeedMaintenancePage() {
   const router = useRouter()
   const [sortBy, setSortBy] = useState<SortBy>("days")
 
-  // 筛选长时间未到店的客人
-  const needServiceContacts = useMemo(() => {
+  // 筛选需维护的联系人 (超过建议频率未联系)
+  const maintenanceContacts = useMemo(() => {
     return mockContacts
       .filter((c) => {
-        const lastService = c.lastService || c.lastContact
-        const frequency = c.serviceFrequency || c.contactFrequency || 30
-        if (!lastService) return true // 从未服务过的也算
-        const days = getDaysSinceLastContact(lastService)
-        return days > frequency
+        const lastDateStr = c.lastContactDate || c.createdAt
+        const freq = c.interactionFrequency || 30
+        const days = getDaysSinceLastContact(lastDateStr)
+        return days > freq
       })
       .map((c) => {
-        const lastService = c.lastService || c.lastContact
-        const frequency = c.serviceFrequency || c.contactFrequency || 30
-        const days = lastService ? getDaysSinceLastContact(lastService) : 999
-        const overdueDays = days - frequency
-        return { ...c, overdueDays, daysSinceService: days }
+        const lastDateStr = c.lastContactDate || c.createdAt
+        const freq = c.interactionFrequency || 30
+        const days = getDaysSinceLastContact(lastDateStr)
+        const overdueDays = days - freq
+        return { ...c, overdueDays, daysSinceContact: days }
       })
   }, [])
 
   // 排序
   const sortedContacts = useMemo(() => {
-    const sorted = [...needServiceContacts]
+    const sorted = [...maintenanceContacts]
     switch (sortBy) {
       case "days":
         sorted.sort((a, b) => b.overdueDays - a.overdueDays) // 超期越多越靠前
         break
       case "level":
-        const levelOrder = { S: 0, A: 1, B: 2, C: 3 }
+        const levelOrder = { S: 0, A: 1, B: 2, C: 3, D: 4 }
         sorted.sort((a, b) => {
-          const orderA = levelOrder[a.level] ?? 3
-          const orderB = levelOrder[b.level] ?? 3
+          const orderA = levelOrder[a.level as keyof typeof levelOrder] ?? 3
+          const orderB = levelOrder[b.level as keyof typeof levelOrder] ?? 3
           if (orderA !== orderB) return orderA - orderB
           return b.overdueDays - a.overdueDays
         })
@@ -56,7 +54,7 @@ export default function NeedServicePage() {
         break
     }
     return sorted
-  }, [needServiceContacts, sortBy])
+  }, [maintenanceContacts, sortBy])
 
   // 按等级统计
   const stats = useMemo(() => {
@@ -66,7 +64,7 @@ export default function NeedServicePage() {
       B: { count: 0, totalDays: 0 },
       C: { count: 0, totalDays: 0 },
     }
-    needServiceContacts.forEach((c) => {
+    maintenanceContacts.forEach((c) => {
       const level = c.level as keyof typeof levelStats
       if (levelStats[level]) {
         levelStats[level].count++
@@ -74,54 +72,50 @@ export default function NeedServicePage() {
       }
     })
     return levelStats
-  }, [needServiceContacts])
+  }, [maintenanceContacts])
 
   const handleQuickCare = (contactId: string) => {
     // 快速创建关怀提醒
-    const contact = mockContacts.find((c) => c.id === contactId)
-    if (contact) {
-      router.push(`/tasks/new?contactId=${contactId}`)
-      // 注意：需要在 tasks/new 页面中根据 URL 参数自动设置类型
-    }
+    router.push(`/tasks/new?contactId=${contactId}&type=follow_up`)
   }
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <PageHeader title="长时间未到店" showBack />
+      <PageHeader title="需维护人脉" showBack />
 
       <main className="px-4 py-4 space-y-4">
         {/* 说明卡片 */}
         <section className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+              <RefreshCw className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium mb-1">主动关怀，提升回头率</p>
+              <p className="text-sm font-medium mb-1">关系需要经营</p>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                这些客人已经超过建议服务频率未到店了。主动关怀可以提升客户满意度，增加回头率。建议优先联系高等级客人。
+                这些人脉已经超过了您设定的维护周期。建议优先联系 S/A 级关键人物，保持关系热度。
               </p>
             </div>
           </div>
         </section>
 
         {/* 统计概览 */}
-        {needServiceContacts.length > 0 && (
+        {maintenanceContacts.length > 0 && (
           <section className="bg-card rounded-xl border border-border p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium">统计概览</p>
-              <span className="text-xs text-muted-foreground">共 {needServiceContacts.length} 位客人</span>
+              <p className="text-sm font-medium">逾期概览</p>
+              <span className="text-xs text-muted-foreground">共 {maintenanceContacts.length} 位</span>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {Object.entries(stats).map(([level, stat]) => {
                 if (stat.count === 0) return null
-                const config = getLevelConfig(level as "S" | "A" | "B" | "C")
+                const config = LEVEL_CONFIG[level as keyof typeof LEVEL_CONFIG]
                 const avgDays = Math.round(stat.totalDays / stat.count)
                 return (
                   <div key={level} className="text-center">
                     <p className={cn("text-lg font-bold", config.textColor)}>{stat.count}</p>
-                    <p className="text-xs text-muted-foreground">{config.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">平均超期{avgDays}天</p>
+                    <p className="text-xs text-muted-foreground">{config.label.split('/')[0]}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">平均逾期{avgDays}天</p>
                   </div>
                 )
               })}
@@ -138,8 +132,8 @@ export default function NeedServicePage() {
             </div>
             <div className="flex gap-2">
               {[
-                { value: "days" as SortBy, label: "超期天数" },
-                { value: "level" as SortBy, label: "客人等级" },
+                { value: "days" as SortBy, label: "逾期天数" },
+                { value: "level" as SortBy, label: "重要等级" },
                 { value: "name" as SortBy, label: "姓名" },
               ].map((option) => (
                 <button
@@ -163,9 +157,9 @@ export default function NeedServicePage() {
         {sortedContacts.length > 0 ? (
           <section className="space-y-3">
             {sortedContacts.map((contact) => {
-              const config = getLevelConfig(contact.level as "S" | "A" | "B" | "C")
-              const lastService = contact.lastService || contact.lastContact
-              const frequency = contact.serviceFrequency || contact.contactFrequency || 30
+              const config = LEVEL_CONFIG[contact.level as keyof typeof LEVEL_CONFIG]
+              const lastDateStr = contact.lastContactDate || contact.createdAt
+              const freq = contact.interactionFrequency || 30
 
               return (
                 <div key={contact.id} className="bg-card rounded-xl border border-border overflow-hidden">
@@ -186,56 +180,32 @@ export default function NeedServicePage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold">{contact.name}</p>
-                          <span className={cn("text-xs px-1.5 py-0.5 rounded", config.bgColor, "text-white")}>
+                          <span className={cn("text-xs px-1.5 py-0.5 rounded text-white", config.bgColor)}>
                             {contact.level}级
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {contact.servicePreferences?.split("，")[0] || "暂无偏好"}
+                          {contact.company || contact.title || "暂无职位信息"}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-urgent">{contact.overdueDays}天</p>
-                        <p className="text-xs text-muted-foreground">超期</p>
+                        <p className="text-sm font-bold text-red-500">{contact.overdueDays}天</p>
+                        <p className="text-xs text-muted-foreground">逾期</p>
                       </div>
                     </div>
 
                     {/* 服务信息 */}
                     <div className="space-y-1.5 text-xs text-muted-foreground">
-                      {lastService ? (
-                        <>
-                          <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <Clock className="w-3.5 h-3.5" />
-                            <span>上次服务：{new Date(lastService).toLocaleDateString("zh-CN")}</span>
-                            <span className="text-urgent">（{contact.daysSinceService}天前）</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span>建议频率：每{frequency}天</span>
-                            <span className="text-urgent">已超期{contact.overdueDays}天</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-3.5 h-3.5 text-urgent" />
-                          <span className="text-urgent">从未服务过</span>
+                            <span>上次联系：{new Date(lastDateStr).toLocaleDateString("zh-CN")}</span>
+                            <span className="text-red-500">（{contact.daysSinceContact}天前）</span>
                         </div>
-                      )}
-                      {contact.lastServiceProject && (
                         <div className="flex items-center gap-2">
-                          <span>上次项目：{contact.lastServiceProject}</span>
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>建议频率：每{freq}天</span>
                         </div>
-                      )}
                     </div>
-
-                    {/* 服务偏好和禁忌提示 */}
-                    {contact.taboos && (
-                      <div className="mt-2 p-2 bg-urgent/5 rounded-lg border border-urgent/20">
-                        <p className="text-xs text-urgent flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          禁忌：{contact.taboos}
-                        </p>
-                      </div>
-                    )}
                   </div>
 
                   {/* 快捷操作 */}
@@ -247,7 +217,7 @@ export default function NeedServicePage() {
                         className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-primary/10 text-primary font-medium text-sm"
                       >
                         <Phone className="w-4 h-4" />
-                        打电话
+                        电话
                       </a>
                     )}
                     {contact.wechat && (
@@ -257,7 +227,7 @@ export default function NeedServicePage() {
                           navigator.clipboard.writeText(contact.wechat!)
                           alert(`微信号已复制: ${contact.wechat}`)
                         }}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-success/10 text-success font-medium text-sm"
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-green-50 text-green-600 font-medium text-sm"
                       >
                         <MessageCircle className="w-4 h-4" />
                         微信
@@ -268,10 +238,10 @@ export default function NeedServicePage() {
                         e.stopPropagation()
                         handleQuickCare(contact.id)
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-warning/10 text-warning font-medium text-sm"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-amber-50 text-amber-600 font-medium text-sm"
                     >
                       <Heart className="w-4 h-4" />
-                      关怀
+                      跟进
                     </button>
                     <button
                       onClick={(e) => {
@@ -289,21 +259,12 @@ export default function NeedServicePage() {
           </section>
         ) : (
           <div className="py-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-success/10 text-success flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-green-50 text-green-500 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8" />
             </div>
-            <p className="text-muted-foreground mb-2">太好了！</p>
-            <p className="text-sm text-muted-foreground">目前没有长时间未到店的客人</p>
+            <p className="text-muted-foreground mb-2">太棒了！</p>
+            <p className="text-sm text-muted-foreground">所有人脉都在维护周期内</p>
           </div>
-        )}
-
-        {/* 使用提示 */}
-        {sortedContacts.length > 0 && (
-          <section className="bg-card rounded-xl border border-border p-4 text-xs text-muted-foreground space-y-1">
-            <p>· 建议优先联系高等级（S级、A级）客人，他们对回头率影响更大。</p>
-            <p>· 主动关怀时可以询问客人近况，表达关心，不要直接推销。</p>
-            <p>· 点击"关怀"可以快速创建关怀提醒，记录关怀行动。</p>
-          </section>
         )}
       </main>
 
@@ -311,4 +272,3 @@ export default function NeedServicePage() {
     </div>
   )
 }
-
