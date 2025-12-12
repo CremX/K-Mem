@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Users, MessageSquare, Calendar, TrendingUp, Star, Tag, PieChart, Activity } from "lucide-react"
+import { Users, MessageSquare, Calendar, TrendingUp, Star, Tag } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { PageHeader } from "@/components/page-header"
 import { StatCard } from "@/components/stat-card"
-import { mockContacts, mockTasks, mockRecords, mockTags } from "@/lib/mock-data"
+import { mockContacts, mockReminders, mockCommunications, mockTags } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 
 type TimeRange = "week" | "month" | "quarter"
@@ -16,16 +16,17 @@ export default function StatisticsPage() {
   // 统计数据
   const stats = {
     totalContacts: mockContacts.length,
-    sLevelContacts: mockContacts.filter((c) => c.level === 'S').length,
-    totalInteractions: mockRecords.length,
-    pendingTasks: mockTasks.filter((r) => r.status === 'pending').length,
-    completedTasks: mockTasks.filter((r) => r.status === 'completed').length,
+    favoriteContacts: mockContacts.filter((c) => c.isFavorite).length,
+    totalCommunications: mockCommunications.length,
+    completedReminders: mockReminders.filter((r) => r.isCompleted).length,
+    pendingReminders: mockReminders.filter((r) => !r.isCompleted).length,
   }
 
-  // 标签分布 (Mock Data)
-  const tagDistribution = mockTags.map((tag) => ({
+  // 标签分布
+  const tagDistribution = mockTags
+    .map((tag) => ({
       ...tag,
-      percentage: Math.round((tag.count / stats.totalContacts) * 100) || 0,
+      percentage: Math.round((tag.count / stats.totalContacts) * 100),
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
@@ -44,94 +45,114 @@ export default function StatisticsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <PageHeader title="人脉大盘" />
+      <PageHeader title="数据统计" />
 
       <main className="px-4 py-4 space-y-6">
+        {/* 时间范围选择 */}
+        <div className="flex gap-2">
+          {[
+            { value: "week", label: "本周" },
+            { value: "month", label: "本月" },
+            { value: "quarter", label: "本季度" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setTimeRange(option.value as TimeRange)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-sm font-medium transition-colors",
+                timeRange === option.value ? "bg-primary text-primary-foreground" : "bg-card border border-border",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
         {/* 核心数据 */}
         <section>
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">核心资产</h2>
+          <h2 className="text-lg font-semibold mb-3">核心数据</h2>
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               icon={Users}
-              label="人脉总数"
+              label="联系人总数"
               value={stats.totalContacts}
               iconClassName="bg-blue-100 text-blue-600"
             />
             <StatCard
               icon={Star}
-              label="S级核心"
-              value={stats.sLevelContacts}
-              iconClassName="bg-amber-100 text-amber-600"
+              label="常联系"
+              value={stats.favoriteContacts}
+              iconClassName="bg-yellow-100 text-yellow-600"
             />
             <StatCard
               icon={MessageSquare}
-              label="本月互动"
-              value={stats.totalInteractions}
+              label="沟通记录"
+              value={stats.totalCommunications}
               trend={{ value: 12, isPositive: true }}
               iconClassName="bg-green-100 text-green-600"
             />
             <StatCard
               icon={Calendar}
-              label="待办任务"
-              value={stats.pendingTasks}
-              iconClassName="bg-red-100 text-red-600"
+              label="已完成提醒"
+              value={stats.completedReminders}
+              iconClassName="bg-purple-100 text-purple-600"
             />
           </div>
         </section>
 
-        {/* 活跃度 */}
+        {/* 本周活跃度 */}
         <section className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold flex items-center gap-2 text-sm">
-              <Activity className="w-5 h-5 text-primary" />
-              互动频率趋势
+            <h3 className="font-semibold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              本周活跃度
             </h3>
-            <span className="text-xs text-muted-foreground">
-              本周共 {activityData.reduce((sum, d) => sum + d.count, 0)} 次
+            <span className="text-sm text-muted-foreground">
+              共 {activityData.reduce((sum, d) => sum + d.count, 0)} 次互动
             </span>
           </div>
           <div className="flex items-end justify-between gap-2 h-32">
             {activityData.map((item) => (
               <div key={item.day} className="flex-1 flex flex-col items-center gap-2">
                 <div className="w-full flex flex-col items-center">
-                  <span className="text-[10px] text-muted-foreground mb-1">{item.count}</span>
+                  <span className="text-xs text-muted-foreground mb-1">{item.count}</span>
                   <div
-                    className="w-full bg-primary/10 rounded-t-md transition-all"
+                    className="w-full bg-primary/20 rounded-t-md transition-all"
                     style={{
                       height: `${(item.count / maxActivity) * 80}px`,
-                      minHeight: "4px",
+                      minHeight: "8px",
                     }}
                   >
                     <div
                       className="w-full h-full bg-primary rounded-t-md"
-                      style={{ opacity: item.count / maxActivity + 0.3 }}
+                      style={{ opacity: item.count / maxActivity }}
                     />
                   </div>
                 </div>
-                <span className="text-[10px] text-muted-foreground">{item.day}</span>
+                <span className="text-xs text-muted-foreground">{item.day}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* 资源分布 */}
+        {/* 标签分布 */}
         <section className="bg-card rounded-xl border border-border p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2 text-sm">
-            <PieChart className="w-5 h-5 text-primary" />
-            资源标签分布
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Tag className="w-5 h-5 text-primary" />
+            联系人标签分布
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {tagDistribution.map((tag) => (
               <div key={tag.id}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">{tag.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {tag.count} 人
+                  <span className="text-sm">{tag.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {tag.count} 人 ({tag.percentage}%)
                   </span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all"
+                    className="h-full bg-primary rounded-full transition-all"
                     style={{ width: `${tag.percentage}%` }}
                   />
                 </div>
@@ -140,56 +161,56 @@ export default function StatisticsPage() {
           </div>
         </section>
 
-        {/* 任务完成率 */}
+        {/* 提醒完成情况 */}
         <section className="bg-card rounded-xl border border-border p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2 text-sm">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            任务执行力
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            提醒完成情况
           </h3>
-          <div className="flex items-center gap-6">
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20 transform -rotate-90">
+          <div className="flex items-center gap-4">
+            <div className="relative w-24 h-24">
+              <svg className="w-24 h-24 transform -rotate-90">
                 <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
+                  cx="48"
+                  cy="48"
+                  r="40"
                   stroke="currentColor"
                   strokeWidth="8"
                   fill="none"
-                  className="text-muted/30"
+                  className="text-muted"
                 />
                 <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
+                  cx="48"
+                  cy="48"
+                  r="40"
                   stroke="currentColor"
                   strokeWidth="8"
                   fill="none"
-                  strokeDasharray={`${(stats.completedTasks / (stats.completedTasks + stats.pendingTasks || 1)) * 226} 226`}
-                  className="text-green-500"
+                  strokeDasharray={`${(stats.completedReminders / (stats.completedReminders + stats.pendingReminders)) * 251.2} 251.2`}
+                  className="text-primary"
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold">
-                  {Math.round((stats.completedTasks / (stats.completedTasks + stats.pendingTasks || 1)) * 100)}%
+                <span className="text-lg font-bold">
+                  {Math.round((stats.completedReminders / (stats.completedReminders + stats.pendingReminders)) * 100)}%
                 </span>
               </div>
             </div>
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                <span className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-primary" />
                   已完成
                 </span>
-                <span className="font-bold text-sm">{stats.completedTasks}</span>
+                <span className="font-medium">{stats.completedReminders}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-muted" />
+                <span className="text-sm flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-muted" />
                   待处理
                 </span>
-                <span className="font-bold text-sm">{stats.pendingTasks}</span>
+                <span className="font-medium">{stats.pendingReminders}</span>
               </div>
             </div>
           </div>

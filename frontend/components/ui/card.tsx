@@ -7,9 +7,7 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card"
       className={cn(
-        // 将原有的简单 bg-card 替换为 glass-panel 样式，并添加触摸/hover反馈
-        'glass-panel text-card-foreground flex flex-col gap-6 rounded-xl border py-6 transition-all duration-300',
-        'hover:shadow-glow/50 active:scale-[0.99]',
+        'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
         className,
       )}
       {...props}
@@ -34,7 +32,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-title"
-      className={cn('leading-none font-semibold font-serif tracking-tight', className)} // 加入 font-serif
+      className={cn('leading-none font-semibold', className)}
       {...props}
     />
   )
@@ -44,7 +42,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-description"
-      className={cn('text-muted-foreground text-sm font-sans', className)} // 明确指定 font-sans
+      className={cn('text-muted-foreground text-sm', className)}
       {...props}
     />
   )
