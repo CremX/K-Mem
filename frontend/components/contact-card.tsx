@@ -1,149 +1,174 @@
 "use client"
 
-import { Phone, MessageCircle, AlertTriangle, Star, Cake } from "lucide-react"
+import { Phone, Star, Link as LinkIcon, Clock, MapPin, Briefcase, Search, MessageSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import type { Contact } from "@/lib/mock-data"
-import { getDaysSinceLastContact, getDaysUntilBirthday } from "@/lib/mock-data"
+import { LEVEL_CONFIG } from "@/lib/constants"
 
 interface ContactCardProps {
   contact: Contact
   showWarnings?: boolean
+  matchContext?: {
+      type: 'note' | 'bio' | 'tag' | 'chat'
+      text: string
+      highlight?: string
+  }
 }
 
-export function ContactCard({ contact, showWarnings = true }: ContactCardProps) {
+export function ContactCard({ contact, showWarnings = true, matchContext }: ContactCardProps) {
   const router = useRouter()
-  const lastService = contact.lastService || contact.lastContact
-  const frequency = contact.serviceFrequency || contact.contactFrequency || 30
-  const daysSinceService = getDaysSinceLastContact(lastService)
-  const daysUntilBirthday = contact.birthday ? getDaysUntilBirthday(contact.birthday) : null
+  
+  const lastDateStr = contact.lastContactDate || contact.createdAt
+  const lastDate = new Date(lastDateStr)
+  const today = new Date()
+  const daysSinceContact = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24))
+  
+  const frequency = contact.interactionFrequency || 30
+  const isOverdue = daysSinceContact > frequency
 
-  // 是否需要服务预警（长时间未到店）
-  const needsService = lastService ? daysSinceService > frequency : false
-  const overdueDays = needsService ? daysSinceService - frequency : 0
+  const levelConfig = LEVEL_CONFIG[contact.level as keyof typeof LEVEL_CONFIG] || LEVEL_CONFIG.C
+  
+  const isSLevel = contact.level === 'S'
+  
+  // 智能提取“记忆钩子”逻辑
+  let memoryHook = null
 
-  // 生日是否临近（7天内）
-  const birthdaySoon = daysUntilBirthday !== null && daysUntilBirthday <= 7 && daysUntilBirthday >= 0
-
-  const getAvatarColor = (name: string, level: string) => {
-    if (level === "S") return "bg-amber-500"
-    if (level === "A") return "bg-primary"
-    if (level === "B") return "bg-emerald-500"
-    return "bg-slate-400"
+  if (matchContext) {
+      // 1. 如果有搜索命中上下文，最高优先级展示
+      let icon = Search
+      if (matchContext.type === 'note') icon = MessageSquare
+      if (matchContext.type === 'tag') icon = LinkIcon
+      
+      memoryHook = { 
+          icon, 
+          text: matchContext.text, 
+          isHighlight: true 
+      }
+  } else {
+      // 2. 默认展示逻辑
+      if (contact.tags.includes("转介绍") || contact.tags.includes("老乡")) {
+          memoryHook = { icon: LinkIcon, text: contact.tags.includes("老乡") ? "同乡会成员" : "王总推荐" }
+      } else if (contact.preferences) {
+          memoryHook = { icon: Star, text: `喜好: ${contact.preferences.split(',')[0]}` } 
+      } else {
+          memoryHook = { icon: Briefcase, text: contact.tags.slice(0, 2).join(" · ") }
+      }
   }
 
-  const getLevelBadge = (level: string) => {
-    const config = {
-      S: { bg: "bg-amber-500/10", text: "text-amber-600", label: "S级" },
-      A: { bg: "bg-primary/10", text: "text-primary", label: "A级" },
-      B: { bg: "bg-emerald-500/10", text: "text-emerald-600", label: "B级" },
-      C: { bg: "bg-slate-500/10", text: "text-slate-500", label: "C级" },
-    }
-    return config[level as keyof typeof config] || config.C
+  const handleCall = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      window.location.href = `tel:${contact.phone}`
   }
 
-  const levelBadge = getLevelBadge(contact.level)
+  // 高亮文本渲染帮助函数
+  const renderHighlight = (text: string, highlight?: string) => {
+      if (!highlight) return text
+      const parts = text.split(new RegExp(`(${highlight})`, 'gi'))
+      return (
+          <span>
+              {parts.map((part, i) => 
+                  part.toLowerCase() === highlight.toLowerCase() 
+                      ? <span key={i} className="bg-yellow-200 dark:bg-yellow-900/50 text-foreground font-bold px-0.5 rounded-[2px]">{part}</span> 
+                      : part
+              )}
+          </span>
+      )
+  }
 
   return (
     <div
       onClick={() => router.push(`/contacts/${contact.id}`)}
-      className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border touch-active"
+      className={cn(
+        "relative group flex items-start gap-3 p-4 rounded-[16px] transition-all duration-300 cursor-pointer active:scale-[0.98]",
+        "bg-card border shadow-sm hover:shadow-md hover:border-primary/20",
+        isSLevel ? "border-secondary/30 bg-gradient-to-br from-card to-secondary/5" : "border-border",
+        // 逾期高亮：左侧加红条提示，而不是整卡变红，保持优雅
+        isOverdue && !isSLevel && "border-l-[3px] border-l-destructive border-y-border border-r-border"
+      )}
     >
-      {/* 头像 */}
-      <div className="relative shrink-0">
+      {/* 头像区域 */}
+      <div className="relative shrink-0 mt-0.5">
         <div
           className={cn(
-            "w-12 h-12 rounded-full flex items-center justify-center text-white font-medium text-lg",
-            getAvatarColor(contact.name, contact.level),
+            "w-12 h-12 rounded-full flex items-center justify-center text-white font-serif font-bold text-lg shadow-sm",
+             levelConfig.bgColor
           )}
         >
           {contact.name.slice(0, 1)}
         </div>
-        {/* 客户等级角标 */}
-        <span
-          className={cn(
-            "absolute -bottom-0.5 -right-0.5 text-[10px] font-bold px-1 rounded",
-            levelBadge.bg,
-            levelBadge.text,
-          )}
-        >
-          {contact.level}
-        </span>
+        
+        {/* 等级徽标 */}
+        {isSLevel && (
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary text-white rounded-full flex items-center justify-center text-[9px] font-bold border-2 border-card shadow-sm">
+                S
+            </div>
+        )}
       </div>
 
       {/* 主要信息 */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{contact.name}</span>
-          {contact.isFavorite && <Star className="w-3.5 h-3.5 text-warning fill-warning shrink-0" />}
+      <div className="flex-1 min-w-0 pr-8"> {/* pr-8 给电话按钮留位置 */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className={cn(
+                "font-bold text-[17px] truncate text-foreground font-sans",
+                isSLevel && "text-primary dark:text-secondary"
+            )}>
+                {renderHighlight(contact.name, matchContext?.highlight)}
+            </span>
+            {contact.isFavorite && <Star className="w-3.5 h-3.5 text-secondary fill-secondary shrink-0" />}
+          </div>
+          
+          {/* 右上角：状态胶囊 */}
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.5 rounded-md font-medium border shrink-0 ml-2",
+            isOverdue 
+                ? "bg-destructive/10 text-destructive border-destructive/20" 
+                : "bg-muted/50 text-muted-foreground border-transparent"
+          )}>
+            {isOverdue ? `${daysSinceContact}天未联系` : `${daysSinceContact}天前`}
+          </span>
         </div>
 
-        {/* 公司职位 */}
-        {contact.company && (
-          <p className="text-xs text-muted-foreground truncate">
-            {contact.company}
-            {contact.position && ` · ${contact.position}`}
-          </p>
-        )}
-
-        {/* 上次服务摘要 */}
-        {contact.lastContactSummary && (
-          <p className="text-xs text-muted-foreground/80 truncate mt-0.5">{contact.lastContactSummary}</p>
-        )}
-
-        {/* 服务偏好提示 */}
-        {contact.servicePreferences && (
-          <p className="text-xs text-muted-foreground/60 truncate mt-0.5">
-            {contact.servicePreferences.split("，")[0]}
-          </p>
-        )}
-
-        {/* 预警信息 */}
-        {showWarnings && (needsService || birthdaySoon) && (
-          <div className="flex items-center gap-2 mt-1.5">
-            {needsService && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-urgent/10 text-urgent rounded">
-                <AlertTriangle className="w-3 h-3" />
-                {overdueDays}天未到店
+        {/* 职位 | 公司 (当没有高亮Context且不是S级时，如果信息太长可以隐藏，这里暂时保留) */}
+        {!matchContext && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2.5">
+              <span className="truncate max-w-[80px] font-medium text-foreground/80">
+                {contact.title || "职位未填"}
               </span>
-            )}
-            {birthdaySoon && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-warning/10 text-warning rounded">
-                <Cake className="w-3 h-3" />
-                {daysUntilBirthday === 0 ? "今天生日" : `${daysUntilBirthday}天后生日`}
+              <span className="w-px h-2.5 bg-border/80"></span>
+              <span className="truncate max-w-[140px]">
+                {contact.company || "公司未填"}
               </span>
-            )}
-          </div>
+            </div>
+        )}
+
+        {/* 记忆钩子 (Context Hook) - 核心改动区域 */}
+        {memoryHook && (
+            <div className={cn(
+                "flex items-start gap-1.5 text-xs px-2 py-1.5 rounded-lg border w-fit max-w-full mt-1",
+                memoryHook.isHighlight 
+                    ? "bg-primary/5 border-primary/20 text-foreground" 
+                    : "bg-muted/30 border-border/40 text-muted-foreground/80"
+            )}>
+                <memoryHook.icon className={cn(
+                    "w-3.5 h-3.5 shrink-0 mt-0.5",
+                    memoryHook.isHighlight ? "text-primary" : "opacity-70"
+                )} />
+                <span className="truncate-2 leading-tight">
+                    {matchContext ? renderHighlight(memoryHook.text, matchContext.highlight) : memoryHook.text}
+                </span>
+            </div>
         )}
       </div>
 
-      {/* 快捷操作 */}
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            window.location.href = `tel:${contact.phone}`
-          }}
-          className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-          aria-label="打电话"
-        >
+      {/* 快捷电话 */}
+      <button 
+          onClick={handleCall}
+          className="absolute bottom-4 right-4 w-8 h-8 rounded-full bg-primary/5 hover:bg-primary/10 flex items-center justify-center text-primary transition-colors active:scale-90"
+      >
           <Phone className="w-4 h-4" />
-        </button>
-        {contact.wechat && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              // 复制微信号
-              navigator.clipboard.writeText(contact.wechat!)
-              alert(`微信号已复制: ${contact.wechat}`)
-            }}
-            className="p-2 rounded-full bg-success/10 text-success hover:bg-success/20 transition-colors"
-            aria-label="微信"
-          >
-            <MessageCircle className="w-4 h-4" />
-          </button>
-        )}
-      </div>
+      </button>
     </div>
   )
 }
