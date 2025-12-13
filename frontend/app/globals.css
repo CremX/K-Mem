@@ -1,76 +1,100 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* 重新设计配色 - 专业、高效、不花哨 */
-  --background: hsl(210 20% 98%);
-  --foreground: hsl(222 47% 11%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222 47% 11%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222 47% 11%);
-  /* 主色：沉稳蓝 - 代表专业、信任 */
-  --primary: hsl(217 91% 50%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(210 40% 96%);
-  --secondary-foreground: hsl(222 47% 20%);
-  --muted: hsl(210 20% 96%);
-  --muted-foreground: hsl(215 16% 47%);
-  --accent: hsl(210 40% 96%);
-  --accent-foreground: hsl(222 47% 11%);
-  /* 警告色：用于逾期、紧急 */
-  --destructive: hsl(0 72% 51%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(214 32% 91%);
-  --input: hsl(214 32% 91%);
-  --ring: hsl(217 91% 50%);
+  /* =========================================
+     Day Mode: 铂金·行政版 (Platinum Executive)
+     "对味秘诀：冷灰底 + 悬浮纸 + 古铜金"
+     ========================================= */
+  
+  /* 背景：#F2F4F6 铂金灰，护眼且高级 */
+  --background: #F2F4F6;
+  
+  /* 文字：#1C1C1E 深炭灰，印刷品质感 */
+  --foreground: #1C1C1E;
 
-  /* 新增功能色 */
-  --success: hsl(142 71% 45%);
-  --success-foreground: hsl(0 0% 100%);
-  --warning: hsl(38 92% 50%);
-  --warning-foreground: hsl(0 0% 100%);
-  --urgent: hsl(0 72% 51%);
-  --urgent-foreground: hsl(0 0% 100%);
+  /* 卡片：纯白，依靠投影区分 */
+  --card: #FFFFFF;
+  --card-foreground: #1C1C1E;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #1C1C1E;
+
+  /* 主色：#B08D28 古铜金，白底上清晰且贵气 */
+  --primary: #B08D28;
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #8E7020; /* 更深的古铜，用于渐变 */
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #E5E5EA; /* 浅灰分割块 */
+  --muted-foreground: #8E8E93; /* 石墨灰 */
+
+  --accent: #FFFFFF;
+  --accent-foreground: #B08D28;
+
+  --destructive: #C92A2A; /* 沉稳的红 */
+  --destructive-foreground: #FFFFFF;
+
+  --border: rgba(0, 0, 0, 0.06); /* 极淡的边框，主要靠投影 */
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: #B08D28;
 
   --radius: 0.75rem;
+
+  /* Shadows - 弥散大投影，模拟悬浮 */
+  --shadow-soft: 
+    0 2px 4px rgba(0,0,0,0.02), 
+    0 6px 12px rgba(0,0,0,0.03);
+    
+  --shadow-elevated: 
+    0 4px 8px rgba(0,0,0,0.03), 
+    0 12px 24px -4px rgba(0,0,0,0.06);
+    
+  --shadow-float: 
+    0 8px 16px rgba(0,0,0,0.04), 
+    0 24px 48px -12px rgba(0,0,0,0.1);
+    
+  --shadow-gold: 
+    0 4px 12px rgba(176, 141, 40, 0.25); /* 古铜金投影 */
 }
 
 .dark {
-  --background: hsl(222 47% 8%);
-  --foreground: hsl(210 20% 98%);
-  --card: hsl(222 47% 11%);
-  --card-foreground: hsl(210 20% 98%);
-  --popover: hsl(222 47% 11%);
-  --popover-foreground: hsl(210 20% 98%);
-  --primary: hsl(217 91% 60%);
-  --primary-foreground: hsl(222 47% 11%);
-  --secondary: hsl(222 47% 15%);
-  --secondary-foreground: hsl(210 20% 98%);
-  --muted: hsl(222 47% 15%);
-  --muted-foreground: hsl(215 16% 57%);
-  --accent: hsl(222 47% 18%);
-  --accent-foreground: hsl(210 20% 98%);
-  --destructive: hsl(0 62% 50%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(222 47% 18%);
-  --input: hsl(222 47% 18%);
-  --ring: hsl(217 91% 60%);
+  /* =========================================
+     Night Mode: 黑金·至尊版 (Black Gold Executive)
+     ========================================= */
+  
+  --background: #050505;  
+  --foreground: #E5E5E5;  
+  --card: #141414;        
+  --card-foreground: #E5E5E5;
+  --popover: #141414;
+  --popover-foreground: #E5E5E5;
+  --primary: #D4AF37;     
+  --primary-foreground: #000000;
+  --secondary: #AA8A28;   
+  --secondary-foreground: #FFFFFF;
+  --muted: #1F1F1F;       
+  --muted-foreground: #A3A3A3;
+  --accent: #1F1F1F;
+  --accent-foreground: #D4AF37;
+  --destructive: #CF6679;
+  --destructive-foreground: #000000;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #D4AF37;
 
-  --success: hsl(142 61% 40%);
-  --success-foreground: hsl(0 0% 100%);
-  --warning: hsl(38 82% 45%);
-  --warning-foreground: hsl(0 0% 100%);
-  --urgent: hsl(0 62% 50%);
-  --urgent-foreground: hsl(0 0% 100%);
+  /* Night Shadows - 金色弥散光 */
+  --shadow-soft: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 12px 24px -6px rgba(0, 0, 0, 0.6);
+  --shadow-float: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  --shadow-gold: 0 0 20px rgba(212, 175, 55, 0.15); 
 }
 
 @theme inline {
-  /* 使用系统字体，保证中文显示效果 */
-  --font-sans: 'Abel', 'Abel Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -90,68 +114,124 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-urgent: var(--urgent);
-  --color-urgent-foreground: var(--urgent-foreground);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --font-serif: 'Roboto Slab', 'Roboto Slab Fallback';}
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --font-serif: var(--font-playfair), var(--font-noto-serif), serif;
+  --font-sans: var(--font-sans), sans-serif;
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-tilt: tilt 10s infinite linear;
+
+  @keyframes accordion-down {
+    from { height: 0 }
+    to { height: var(--radix-accordion-content-height) }
   }
-  body {
-    @apply bg-background text-foreground;
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height) }
+    to { height: 0 }
+  }
+  @keyframes shimmer {
+    from { background-position: 0 0 }
+    to { background-position: -200% 0 }
+  }
+  @keyframes tilt {
+    0%, 50%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(0.5deg); }
+    75% { transform: rotate(-0.5deg); }
   }
 }
 
-/* 移动端滚动优化 */
-.hide-scrollbar {
+/* 基础样式 */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans); 
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  
+  /* 纹理：Light Mode 下使用极淡噪点，增加纸张感 */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+.dark body {
+    /* Dark Mode 下增加噪点可见度，模拟磨砂黑卡纸 */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* 标题字体 */
+h1, h2, h3, h4, h5, h6, .font-serif {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.025em; 
+}
+
+@utility hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* 安全区域适配 */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-/* 新增动画 */
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
-.animate-slide-up {
-  animation: slide-up 0.2s ease-out;
+@utility glass-dark {
+  background: rgba(20, 20, 20, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.15); 
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* 触摸反馈 */
-/* 使用原生CSS替代不兼容的@apply active:变体 */
-.touch-active {
-  transition: all 0.15s ease;
+@utility glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-.touch-active:active {
-  transform: scale(0.98);
-  opacity: 0.8;
+/* 按钮 - 物理质感 */
+.btn-primary {
+  @apply rounded-xl px-6 py-3 font-bold transition-all duration-300 relative overflow-hidden;
+  /* Light: 古铜金渐变 */
+  background: linear-gradient(135deg, #B08D28 0%, #8E7020 100%);
+  color: #FFFFFF;
+  box-shadow: 
+    0 4px 12px rgba(176, 141, 40, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.dark .btn-primary {
+  /* Dark: 香槟金渐变 */
+  background: linear-gradient(135deg, #D4AF37 0%, #AA8A28 100%);
+  color: #000000;
+  box-shadow: 
+    0 4px 12px rgba(212, 175, 55, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), 
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);    
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* 卡片 - 行政级质感 */
+.card-executive {
+  @apply bg-card border-0 rounded-[20px] p-6 transition-all duration-300 relative overflow-hidden;
+  /* Light: 依靠弥散投影 */
+  box-shadow: var(--shadow-elevated);
+}
+
+.dark .card-executive {
+  /* Dark: 依靠光感边框 */
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 
+    0 10px 30px -10px rgba(0, 0, 0, 0.5); 
 }

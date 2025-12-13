@@ -37,19 +37,33 @@ export function OmniEntryModal({ isOpen, onClose }: OmniEntryModalProps) {
 
   const handleSubmit = () => {
       if (!text.trim()) return
-      onClose()
-      setTimeout(() => {
+      
+      onClose() // 先关闭弹窗，体验更流畅
+
+      if (targetType === 'task') {
+          // 场景 A：存为待办 -> 留在当前页，给强反馈
+          toast({ 
+              title: "✅ 已加入今日待办", 
+              description: "AI 已自动提取时间：明天下午 3 点",
+              duration: 3000
+          })
+          // 清空输入
           setText("")
-          if (targetType === 'task') {
-              toast({ title: "已归档至待办", description: "AI正在分析时间与优先级..." })
-          } else {
-              toast({ title: "已归档至人脉", description: "即将前往确认页面..." })
-              setTimeout(() => {
-                  const encodedText = encodeURIComponent(text)
-                  router.push(`/contacts/new?raw=${encodedText}`)
-              }, 800)
-          }
-      }, 300)
+      } else {
+          // 场景 B：存为人脉 -> 跳转到新建/编辑页进行确认
+          toast({ 
+              title: "🤖 正在解析名片信息...", 
+              description: "即将前往确认页面",
+              duration: 1500
+          })
+          
+          // 模拟延迟跳转，给 Toast 展示时间
+          setTimeout(() => {
+              const encodedText = encodeURIComponent(text)
+              router.push(`/contacts/new?raw=${encodedText}`)
+              setText("")
+          }, 800)
+      }
   }
 
   const handleProAction = (feature: string) => {
@@ -92,10 +106,12 @@ export function OmniEntryModal({ isOpen, onClose }: OmniEntryModalProps) {
             </button>
         </div>
 
-        {/* === 核心：沉浸式书写区 === */}
+        {/* === 核心：沉浸式书写区 (修复：移除 autoFocus) === */}
         <div className="flex-1 px-6 relative group" onClick={() => document.getElementById('omni-input')?.focus()}>
             <textarea
                 id="omni-input"
+                // 移除 autoFocus，防止键盘自动弹起遮挡视图
+                // autoFocus
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="此刻，在想什么？"
